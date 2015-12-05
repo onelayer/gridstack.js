@@ -516,7 +516,8 @@
             _class: 'grid-stack-' + (Math.random() * 10000).toFixed(0),
             animate: Boolean(this.container.attr('data-gs-animate')) || false,
             always_show_resize_handle: false,
-            static_class: 'grid-stack-static'
+            static_class: 'grid-stack-static',
+            y_fit_increment: 1
         };
 
         opts = _.defaults(opts, defaults);
@@ -974,6 +975,28 @@
     GridStack.prototype.is_area_empty_and_will_it_fit = function(x, y, width, height, auto_position) {
         return (auto_position || this.is_area_empty(x, y, width, height)) &&
                 this.will_it_fit(x, y, width, height, auto_position);
+    };
+
+    GridStack.prototype.try_moving_tile_y = function(x, y, width, height, rows) {
+      var increment_y = 0,
+          max_y = rows - height,
+          fitting_y = y,
+          fitted_previously = false;
+
+      while (increment_y <= max_y) {
+        var it_will_fit = this.is_area_empty_and_will_it_fit(x, increment_y, width, height, false);
+        if (it_will_fit) {
+          if (!fitted_previously) {
+            fitting_y = increment_y;
+            fitted_previously = true;
+          }
+        } else {
+          fitted_previously = false;
+        }
+        increment_y += this.opts.y_fit_increment;
+      }
+
+      return fitting_y;
     };
 
     GridStack.prototype.set_static = function(static_value) {
