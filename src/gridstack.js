@@ -71,14 +71,14 @@
 
     var GridStackEngine = function(width, onchange, float_mode, height, items) {
         this.width = width;
-        this['float'] = float_mode || false;
+        this.float = float_mode || false;
         this.height = height || 0;
 
         this.nodes = items || [];
         this.onchange = onchange || function() {};
 
         this._update_counter = 0;
-        this._float = this['float'];
+        this._original_float = this.float;
     };
 
     GridStackEngine.prototype.batch_update = function() {
@@ -89,7 +89,7 @@
     GridStackEngine.prototype.commit = function() {
         this._update_counter = 0;
         if (this._update_counter == 0) {
-            this.float = this._float;
+            this.float = this._original_float;
             this._pack_nodes();
             this._notify();
         }
