@@ -971,6 +971,11 @@
         return this.grid.is_area_empty(x, y, width, height);
     };
 
+    GridStack.prototype.is_area_empty_and_will_it_fit = function(x, y, width, height, auto_position) {
+        return (auto_position || this.is_area_empty(x, y, width, height)) &&
+                this.will_it_fit(x, y, width, height, auto_position);
+    };
+
     GridStack.prototype.set_static = function(static_value) {
         this.opts.static_grid = (static_value === true);
         this._set_static_class();
