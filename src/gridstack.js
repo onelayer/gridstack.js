@@ -999,6 +999,15 @@
       return fitting_y;
     };
 
+    GridStack.prototype.try_shrinking_tile_height = function(x, y, width, height, min_height, auto_position) {
+        for (var h = height-1; h >= min_height; h -= this.opts.y_fit_increment) {
+            if (this.is_area_empty_and_will_it_fit(x, y, width, h, auto_position)) {
+                return h;
+            }
+        }
+        return false;
+    };
+
     GridStack.prototype.set_static = function(static_value) {
         this.opts.static_grid = (static_value === true);
         this._set_static_class();
