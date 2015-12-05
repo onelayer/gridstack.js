@@ -107,9 +107,11 @@
             var collision_node = _.find(this.nodes, function(n) {
                 return n != node && Utils.is_intercepted(n, nn);
             }, this);
+
             if (typeof collision_node == 'undefined') {
                 return;
             }
+
             this.move_node(collision_node, collision_node.x, node.y + node.height,
                 collision_node.width, collision_node.height, true);
         }
@@ -284,7 +286,7 @@
     };
 
     GridStackEngine.prototype.can_move_node = function(node, x, y, width, height) {
-        var has_locked = Boolean(_.find(this.nodes, function(n) { return n.locked }));
+        var has_locked = _.any(this.nodes, function(n) { return n.locked });
 
         if (!this.height && !has_locked) {
             return true;
@@ -297,12 +299,15 @@
 
         var res = true;
 
-        if (has_locked)
-            res &= !Boolean(_.find(clone.nodes, function(n) {
+        if (has_locked) {
+            res &= !_.any(clone.nodes, function(n) {
                 return n != cloned_node && Boolean(n.locked) && Boolean(n._dirty);
-            }));
-        if (this.height)
+            });
+        }
+
+        if (this.height) {
             res &= clone.get_grid_height() <= this.height;
+        }
 
         return res;
     };
