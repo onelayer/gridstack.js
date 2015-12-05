@@ -286,22 +286,12 @@
     GridStackEngine.prototype.can_move_node = function(node, x, y, width, height) {
         var has_locked = Boolean(_.find(this.nodes, function(n) { return n.locked }));
 
-        if (!this.height && !has_locked)
+        if (!this.height && !has_locked) {
             return true;
+        }
 
-        var cloned_node;
-        var clone = new GridStackEngine(
-            this.width,
-            null,
-            this.float,
-            0,
-            _.map(this.nodes, function(n) {
-                if (n == node) {
-                    cloned_node = $.extend({}, n);
-                    return cloned_node;
-                }
-                return $.extend({}, n);
-            }));
+        var clone = this.clone(node);
+        var cloned_node = clone.target_node;
 
         clone.move_node(cloned_node, x, y, width, height);
 
@@ -321,12 +311,7 @@
         if (!this.height)
             return true;
 
-        var clone = new GridStackEngine(
-            this.width,
-            null,
-            this.float,
-            0,
-            _.map(this.nodes, function(n) { return $.extend({}, n) }));
+        var clone = this.clone();
         clone.add_node(node);
         return clone.get_grid_height() <= this.height;
     };
@@ -383,6 +368,22 @@
         if (n) {
             n._updating = false;
         }
+    };
+
+    GridStackEngine.prototype.clone = function(target_node) {
+        var cloned_node;
+        var clone = new GridStackEngine(this.width, null, this.float, 0, _.map(this.nodes, function(node) {
+            if (target_node && node == target_node) {
+                cloned_node = $.extend({}, target_node);
+                return cloned_node;
+            } else {
+                return $.extend({}, node);
+            }
+        }));
+
+        clone.target_node = cloned_node;
+
+        return clone;
     };
 
     var GridStack = function(el, opts) {
