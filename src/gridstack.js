@@ -387,47 +387,14 @@
 
     var GridStack = function(el, opts) {
         var self = this, one_column_mode;
-
-        opts = opts || {};
-
         this.container = $(el);
-
-        opts.item_class = opts.item_class || 'grid-stack-item';
-        var is_nested = this.container.closest('.' + opts.item_class).size() > 0;
-
-        this.opts = _.defaults(opts || {}, {
-            width: parseInt(this.container.attr('data-gs-width')) || 12,
-            height: parseInt(this.container.attr('data-gs-height')) || 0,
-            item_class: 'grid-stack-item',
-            placeholder_class: 'grid-stack-placeholder',
-            handle: '.grid-stack-item-content',
-            handle_class: null,
-            cell_height: 60,
-            vertical_margin: 20,
-            auto: true,
-            min_width: 768,
-            float: false,
-            static_grid: false,
-            _class: 'grid-stack-' + (Math.random() * 10000).toFixed(0),
-            animate: Boolean(this.container.attr('data-gs-animate')) || false,
-            always_show_resize_handle: opts.always_show_resize_handle || false,
-            resizable: _.defaults(opts.resizable || {}, {
-                autoHide: !(opts.always_show_resize_handle || false),
-                handles: 'se'
-            }),
-            draggable: _.defaults(opts.draggable || {}, {
-                handle: (opts.handle_class ? '.' + opts.handle_class : (opts.handle ? opts.handle : '')) || '.grid-stack-item-content',
-                scroll: false,
-                appendTo: 'body'
-            })
-        });
-        this.opts.is_nested = is_nested;
+        this.opts = this._process_options(opts);
 
         this.container.addClass(this.opts._class);
 
         this._set_static_class();
 
-        if (is_nested) {
+        if (this.opts.is_nested) {
             this.container.addClass('grid-stack-nested');
         }
 
@@ -521,6 +488,47 @@
 
         $(window).resize(this.on_resize_handler);
         this.on_resize_handler();
+    };
+
+    GridStack.prototype._process_options = function(opts) {
+        opts = opts || {};
+
+        var defaults = {
+            width: parseInt(this.container.attr('data-gs-width')) || 12,
+            height: parseInt(this.container.attr('data-gs-height')) || 0,
+            primary_axis: 'y',
+            item_class: 'grid-stack-item',
+            placeholder_class: 'grid-stack-placeholder',
+            handle: '.grid-stack-item-content',
+            handle_class: null,
+            cell_height: 60,
+            vertical_margin: 20,
+            auto: true,
+            min_width: 768,
+            float: false,
+            static_grid: false,
+            _class: 'grid-stack-' + (Math.random() * 10000).toFixed(0),
+            animate: Boolean(this.container.attr('data-gs-animate')) || false,
+            always_show_resize_handle: false,
+            static_class: 'grid-stack-static'
+        };
+
+        opts = _.defaults(opts, defaults);
+
+        opts.is_nested = this.container.closest('.' + opts.item_class).size() > 0;
+
+        opts.resizable = _.defaults(opts.resizable || {}, {
+            autoHide: !(opts.always_show_resize_handle || false),
+            handles: 'se'
+        });
+
+        opts.draggable = _.defaults(opts.draggable || {}, {
+            handle: (opts.handle_class ? '.' + opts.handle_class : (opts.handle ? opts.handle : '')) || '.grid-stack-item-content',
+            scroll: false,
+            appendTo: 'body'
+        });
+
+        return opts;
     };
 
     GridStack.prototype._trigger_change_event = function(forceTrigger) {
@@ -963,12 +971,10 @@
     };
 
     GridStack.prototype._set_static_class = function() {
-        var static_class_name = 'grid-stack-static';
-
         if (this.opts.static_grid === true) {
-            this.container.addClass(static_class_name);
+            this.container.addClass(this.opts.static_class);
         } else {
-            this.container.removeClass(static_class_name);
+            this.container.removeClass(this.opts.static_class);
         }
     };
 
