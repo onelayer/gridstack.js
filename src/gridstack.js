@@ -191,10 +191,10 @@
     GridStackEngine.prototype._prepare_node = function(node, resizing) {
         node = _.defaults(node || {}, {width: 1, height: 1, x: 0, y: 0 });
 
-        node.x = parseInt('' + node.x);
-        node.y = parseInt('' + node.y);
-        node.width = parseInt('' + node.width);
-        node.height = parseInt('' + node.height);
+        node.x = parseInt('' + node.x, 10);
+        node.y = parseInt('' + node.y, 10);
+        node.width = parseInt('' + node.width, 10);
+        node.height = parseInt('' + node.height, 10);
         node.auto_position = node.auto_position || false;
         node.no_resize = node.no_resize || false;
         node.no_move = node.no_move || false;
@@ -337,7 +337,7 @@
         if (typeof node.max_width != 'undefined') width = Math.min(width, node.max_width);
         if (typeof node.max_height != 'undefined') height = Math.min(height, node.max_height);
         if (typeof node.min_width != 'undefined') width = Math.max(width, node.min_width);
-        if (typeof node.min_height != 'undefined') height = Math.max(height, node.min_height);
+        if (typeof node.min_height != 'undefined') height = (node.minimized ? height : Math.max(height, node.min_height));
 
         if (node.x == x && node.y == y && node.width == width && node.height == height) {
             return false;
@@ -384,6 +384,20 @@
         return columns;
     };
 
+    GridStackEngine.prototype.get_column_by_x = function(x) {
+        var columns = this.get_nodes_by_column();
+        return columns[x];
+    };
+
+    GridStackEngine.prototype.get_node_by_coords = function(x, y) {
+        var selected_column = this.get_column_by_x(x);
+        if (selected_column) {
+            var target_node = selected_column
+                .find(function(node) { return node.y == y; });
+            return target_node;
+        }
+    };
+
     GridStackEngine.prototype.column_overflows = function(column) {
         var column_height = _(column).map(function(node) {
             return node.y + node.height;
@@ -412,7 +426,7 @@
                             node.x,
                             node.y,
                             node.width,
-                            node.height-3)
+                            node.height-3);
                     });
                 }
             });
@@ -421,6 +435,65 @@
         }
 
         return everything_fits;
+    };
+
+    GridStackEngine.prototype.focus_on_node_at = function(x, y, minimize_others) {
+        var target_node = this.get_node_by_coords(x, y);
+
+        if (minimize_others) {
+
+        }
+
+        this.expand_node(target_node);
+        // var self = this;
+        // var selected_column = this.get_column_by_x(x);
+        // if (selected_column) {
+        //     var target_node = this.get_node_by_coords(x, y);
+        //
+        //     if (target_node) {
+        //         if (minimize_others) {
+        //             selected_column
+        //                 .filter(function(node) { return node.y != y; })
+        //                 .forEach(function(node) {
+        //                     self.minimize_node(node);
+        //                 });
+        //         }
+        //
+        //         this.move_node(target_node, x, y, target_node.width, self.height * 10, true);
+        //     }
+        // }
+    };
+
+    GridStackEngine.prototype.minimize_node_at = function(x, y) {
+        var target_node = this.get_node_by_coords(x, y);
+        this.minimize_node(target_node);
+    };
+
+    GridStackEngine.prototype.minimize_node = function(node) {
+        node.minimized = true;
+
+        node.expanded_height = node.height;
+        node.expanded_min_height = node.min_height;
+
+        node.el.attr('data-gs-min-height', 5);
+        node.min_height = 5;
+
+        this.move_node(node, node.x, node.y, node.width, node.min_height);
+    };
+
+    GridStackEngine.prototype.expand_node = function(node) {
+        if (node.minimized) {
+            delete node.minimized;
+
+            var restore_height = node.expanded_height;
+            delete node.expanded_height;
+
+            node.min_height = node.expanded_min_height;
+            delete node.expanded_min_height;
+            node.el.attr('data-gs-min-height', node.min_height);
+
+            this.move_node(node, node.x, node.y, node.width, restore_height);
+        }
     };
 
     GridStackEngine.prototype.begin_update = function(node) {
@@ -922,21 +995,21 @@
     };
 
     GridStack.prototype.min_height = function (el, val) {
-    el = $(el);
-    el.each(function (index, el) {
-      el = $(el);
-      var node = el.data('_gridstack_node');
-      if (typeof node == 'undefined' || node == null) {
-        return;
-      }
+        el = $(el);
+        el.each(function (index, el) {
+          el = $(el);
+          var node = el.data('_gridstack_node');
+          if (typeof node == 'undefined' || node == null) {
+            return;
+          }
 
-      if(!isNaN(val)){
-        node.min_height = (val || false);
-        el.attr('data-gs-min-height', val);
-      }
-    });
-    return this;
-  };
+          if(!isNaN(val)){
+            node.min_height = (val || false);
+            el.attr('data-gs-min-height', val);
+          }
+        });
+        return this;
+    };
 
     GridStack.prototype.min_width = function (el, val) {
       el = $(el);
@@ -952,7 +1025,7 @@
         el.attr('data-gs-min-width', val);
       }
     });
-    return this;
+        return this;
     };
 
     GridStack.prototype._update_element = function(el, callback) {
@@ -1078,6 +1151,14 @@
             }
         }
         return false;
+    };
+
+    GridStack.prototype.focus_on_node_at = function(x, y, minimize_others) {
+        this.grid.focus_on_node_at(x, y, minimize_others);
+    };
+
+    GridStack.prototype.minimize_node_at = function(x, y) {
+        this.grid.minimize_node_at(x, y);
     };
 
     GridStack.prototype.set_static = function(static_value) {
