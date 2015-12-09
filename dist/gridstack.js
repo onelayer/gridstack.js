@@ -578,7 +578,7 @@
             });
         }
 
-        this.expand_node(target_node, true);
+        this.expand_node(target_node, minimize_others);
         this.fit_to_height();
 
         // columns.forEach(function(column) {
@@ -719,7 +719,7 @@
                         .attr('data-gs-y', n.y)
                         .attr('data-gs-width', n.width)
                         .attr('data-gs-height', n.height)
-                        .attr('data-gs-minimized', (n.minimized == "true"));
+                        .attr('data-gs-minimized', (["true", true].indexOf(n.minimized) > -1));
                     max_height = Math.max(max_height, n.y + n.height);
                 }
             });
