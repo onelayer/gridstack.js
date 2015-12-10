@@ -72,14 +72,16 @@
 
     var id_seq = 0;
 
-    var GridStackEngine = function(width, onchange, float_mode, height, items, make_room) {
-        this.width = width;
-        this.float = float_mode || false;
-        this.height = height || 0;
-        this.make_room = make_room || false;
+    var GridStackEngine = function(opts) {
+        this.opts = opts;
 
-        this.nodes = items || [];
-        this.onchange = onchange || function() {};
+        this.width = opts.width;
+        this.float = opts.float_mode || false;
+        this.height = opts.height || 0;
+        this.minimize_height = opts.minimize_height;
+
+        this.nodes = opts.items || [];
+        this.onchange = opts.onchange || function() {};
 
         this._update_counter = 0;
         this._original_float = this.float;
@@ -344,7 +346,7 @@
         if (typeof node.max_width != 'undefined') width = Math.min(width, node.max_width);
         if (typeof node.max_height != 'undefined') height = Math.min(height, node.max_height);
         if (typeof node.min_width != 'undefined') width = Math.max(width, node.min_width);
-        if (typeof node.min_height != 'undefined') height = (node.minimized ? height : Math.max(height, node.min_height));
+        if (typeof node.min_height != 'undefined') height = (node.minimized ? this.minimize_height : Math.max(height, node.min_height));
 
         // if (node.el.attr('data-gs-x') == x &&
         //     node.el.attr('data-gs-y') == y &&
@@ -629,8 +631,9 @@
         node.expanded_height = node.height;
         node.expanded_min_height = node.min_height;
 
-        node.el.attr('data-gs-min-height', 5);
-        node.min_height = 5;
+        var minimize_height = this.minimize_height;
+        node.el.attr('data-gs-min-height', minimize_height);
+        node.min_height = minimize_height;
 
         this.move_node(node, node.x, node.y, node.width, node.min_height);
     };
@@ -678,14 +681,23 @@
 
     GridStackEngine.prototype.clone = function(target_node) {
         var cloned_node;
-        var clone = new GridStackEngine(this.width, null, this.float, 0, _.map(this.nodes, function(node) {
-            if (target_node && node == target_node) {
-                cloned_node = $.extend({}, target_node);
-                return cloned_node;
-            } else {
-                return $.extend({}, node);
-            }
-        }), this.make_room);
+        var opts = {
+            width: this.width,
+            float: this.float,
+            height: 0,
+            items: _.map(this.nodes, function(node) {
+                if (target_node && node == target_node) {
+                    cloned_node = $.extend({}, target_node);
+                    return cloned_node;
+                } else {
+                    return $.extend({}, node);
+                }
+            }),
+            onchange: null,
+            minimize_height: this.minimize_height
+        };
+
+        var clone = new GridStackEngine(opts);
 
         clone.target_node = cloned_node;
 
@@ -707,24 +719,32 @@
 
         this._init_styles();
 
-        this.grid = new GridStackEngine(this.opts.width, function(nodes) {
-            var max_height = 0;
-            _.each(nodes, function(n) {
-                if (n._id == null) {
-                    n.el.remove();
-                }
-                else {
-                    n.el
-                        .attr('data-gs-x', n.x)
-                        .attr('data-gs-y', n.y)
-                        .attr('data-gs-width', n.width)
-                        .attr('data-gs-height', n.height)
-                        .attr('data-gs-minimized', (["true", true].indexOf(n.minimized) > -1));
-                    max_height = Math.max(max_height, n.y + n.height);
-                }
-            });
-            self._update_styles(max_height + 10);
-        }, this.opts.float, this.opts.height);
+        var gridOpts = {
+            width: this.opts.width,
+            float: this.opts.float,
+            height: this.opts.height,
+            minimize_height: this.opts.minimize_height,
+            onchange: function(nodes) {
+                var max_height = 0;
+                _.each(nodes, function(n) {
+                    if (n._id == null) {
+                        n.el.remove();
+                    }
+                    else {
+                        n.el
+                            .attr('data-gs-x', n.x)
+                            .attr('data-gs-y', n.y)
+                            .attr('data-gs-width', n.width)
+                            .attr('data-gs-height', n.height)
+                            .attr('data-gs-minimized', (["true", true].indexOf(n.minimized) > -1));
+                        max_height = Math.max(max_height, n.y + n.height);
+                    }
+                });
+                self._update_styles(max_height + 10);
+            }
+        };
+
+        this.grid = new GridStackEngine(gridOpts);
 
         if (this.opts.auto) {
             var elements = [];
@@ -811,6 +831,7 @@
             handle_class: null,
             cell_height: 60,
             vertical_margin: 20,
+            minimize_height: 3,
             auto: true,
             min_width: 768,
             float: false,
@@ -823,8 +844,6 @@
             can_expand_x: true,
             make_room_on_drag: false
         };
-
-
 
         opts = _.defaults(opts, defaults);
         opts.is_nested = this.container.closest('.' + opts.item_class).size() > 0;
