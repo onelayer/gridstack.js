@@ -76,7 +76,7 @@
         this.opts = opts;
 
         this.width = opts.width;
-        this.float = opts.float_mode || false;
+        this.float = opts.float || false;
         this.height = opts.height || 0;
         this.minimize_height = opts.minimize_height;
 
@@ -684,7 +684,7 @@
         var opts = {
             width: this.width,
             float: this.float,
-            height: 0,
+            height: this.height,
             items: _.map(this.nodes, function(node) {
                 if (target_node && node == target_node) {
                     cloned_node = $.extend({}, target_node);
