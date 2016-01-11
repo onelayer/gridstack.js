@@ -21,11 +21,14 @@
     var scope = window;
 
     var Utils = {
-        is_intercepted: function(a, b) {
-            return !(a.x + a.width <= b.x ||
-                     b.x + b.width <= a.x ||
-                     a.y + a.height <= b.y ||
-                     b.y + b.height <= a.y);
+        is_intercepted: function(a, b, threshold) {
+            if (!threshold) {
+              threshold = 0;
+            }
+            return !(a.x + (a.width * (1-threshold)) <= b.x ||
+                     b.x + (b.width * (1-threshold)) <= a.x ||
+                     a.y + (a.height * (1-threshold)) <= b.y ||
+                     b.y + (b.height * (1-threshold)) <= a.y);
         },
 
         sort: function(nodes, dir, width) {
@@ -842,7 +845,8 @@
             static_class: 'grid-stack-static',
             y_fit_increment: 1,
             can_expand_x: true,
-            make_room_on_drag: false
+            make_room_on_drag: false,
+            drag_delay: 100
         };
 
         opts = _.defaults(opts, defaults);
@@ -1051,7 +1055,7 @@
 
                 drag_timeout = setTimeout(function() {
                     on_drag(event, ui);
-                }, 100);
+                }, self.opts.drag_delay);
             },
             containment: this.opts.is_nested ? this.container.parent() : null
         })).resizable(_.extend(this.opts.resizable, {
